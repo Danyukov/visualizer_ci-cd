@@ -1,0 +1,37 @@
+# PRODUCTION
+FROM golang:1.22-alpine as builder
+
+# Устанавливаем рабочую директорию
+WORKDIR /app
+
+# Копируем все файлы проекта в рабочую директорию контейнера
+COPY . .
+
+# Устанавливаем переменные окружения для Linux сборки
+ENV GOOS=linux
+ENV GOARCH=amd64
+# Загружаем зависимости и собираем приложение
+RUN go mod tidy
+RUN go build -o visualizerlinux3 ./cmd/main.go  # Сборка Go проекта
+
+# Используем базовый образ для финального контейнера
+FROM alpine:latest
+
+# Устанавливаем рабочую директорию
+WORKDIR /app
+
+# Копируем скомпилированный бинарный файл из образа builder
+COPY --from=builder /app/visualizerlinux3 /app/visualizerlinux3
+
+# Копируем конфигурационные файлы
+COPY configs /app/configs
+
+# Указываем переменную окружения для конфигурации
+ENV CONFIG_PATH=/app/configs/prod.yaml
+
+# Открываем порт
+EXPOSE 8888
+
+# Указываем команду для запуска приложения
+CMD ["/app/visualizerlinux3"]
+

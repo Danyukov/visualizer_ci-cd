@@ -1,0 +1,36 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - stage  # или другая ветка, по которой нужно запускать workflow
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa  # устанавливаем права на ключ
+        ssh-keyscan -H 20.107.247.116 >> ~/.ssh/known_hosts  # добавляем хост в known_hosts
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}  # используем секрет из GitHub Secrets
+
+
+    - name: SSH into remote Windows server and deploy with Docker Compose
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa imbydata@20.107.247.116 << 'EOF'
+        cd C:/Users/imbydata/Desktop/Visualizer
+        powershell
+        git fetch origin
+        git reset --hard origin/stage
+        docker-compose up --build -d
+        EOF
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}

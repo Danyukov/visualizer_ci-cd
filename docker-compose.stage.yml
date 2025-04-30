@@ -1,0 +1,55 @@
+version: "3.8"
+services:
+  postgres_stage:
+    image: postgres:latest
+    container_name: visualizer-db-stage
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: visualizer-db-stage
+    ports:
+      - "5433:5432"
+    volumes:
+      - visualizer-db-stage-data:/var/lib/postgresql/data
+    networks:
+      - backend-network
+
+  backend_stage:
+    build:
+      context: ./visualizer-go
+      dockerfile: Dockerfile.stage
+    container_name: visualizer-backend-stage
+    ports:
+      - "8889:8889"
+    environment:
+      - CONFIG_PATH=/app/configs/local.yaml
+      - DATABASE_HOST=postgres_stage
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=visualizer-db-stage
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=root
+    networks:
+      - backend-network
+    depends_on:
+      - postgres_stage
+    command: sh -c "sleep 10 && /app/visualizerlinux3"
+
+  frontend_stage:
+    build:
+      context: ./visualizer-react
+      dockerfile: Dockerfile.stage
+    container_name: visualizer-frontend-stage
+    ports:
+      - "81:81"
+    networks:
+      - backend-network
+    depends_on:
+      - backend_stage
+
+networks:
+  backend-network:
+    driver: bridge
+
+volumes:
+  visualizer-db-stage-data:
+    driver: local

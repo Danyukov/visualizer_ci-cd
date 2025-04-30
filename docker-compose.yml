@@ -1,0 +1,103 @@
+
+services:
+  postgres_prod:
+    image: postgres:latest
+    container_name: visualizer-db-prod
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: visualizer-db-prod  # База данных для prod
+    ports:
+      - "5432:5432"
+    volumes:
+      - visualizer-db-prod-data:/var/lib/postgresql/data
+    networks:
+      - backend-network
+
+  postgres_stage:
+    image: postgres:latest
+    container_name: visualizer-db-stage
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: visualizer-db-stage  # База данных для stage
+    ports:
+      - "5433:5432"  # Пробросим порт 5433 на хосте для базы данных stage
+    volumes:
+      - visualizer-db-stage-data:/var/lib/postgresql/data
+    networks:
+      - backend-network
+
+  backend_prod:
+    build:
+      context: ./visualizer-go  # Путь к папке с Dockerfile для бэкенда
+      dockerfile: Dockerfile  # Путь к Dockerfile
+    container_name: visualizer-backend-prod
+    ports:
+      - "8888:8888"
+    environment:
+      - CONFIG_PATH=/app/configs/prod.yaml
+      - DATABASE_HOST=postgres_prod  # Используем имя контейнера postgres_prod
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=visualizer-db-prod  # Имя базы данных для prod
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=root
+    networks:
+      - backend-network
+    depends_on:
+      - postgres_prod
+    command: sh -c "sleep 10 && /app/visualizerlinux3"  # Задержка перед запуском бэкенда
+
+  backend_stage:
+    build:
+      context: ./visualizer-go  # Путь к папке с Dockerfile для бэкенда
+      dockerfile: Dockerfile.stage  # Путь к Dockerfile
+    container_name: visualizer-backend-stage
+    ports:
+      - "8889:8889"
+    environment:
+      - CONFIG_PATH=/app/configs/local.yaml
+      - DATABASE_HOST=postgres_stage  # Используем имя контейнера postgres_stage
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=visualizer-db-stage  # Имя базы данных для stage
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=root
+    networks:
+      - backend-network
+    depends_on:
+      - postgres_stage
+    command: sh -c "sleep 10 && /app/visualizerlinux3"  # Задержка перед запуском бэкенда
+
+  frontend_prod:
+    build:
+      context: ./visualizer-react  # Путь к папке с Dockerfile для фронтенда
+      dockerfile: Dockerfile  # Путь к Dockerfile
+    container_name: visualizer-frontend-prod
+    ports:
+      - "80:80"  # Порт для прод
+    networks:
+      - backend-network
+    depends_on:
+      - backend_prod
+
+  frontend_stage:
+    build:
+      context: ./visualizer-react  # Путь к папке с Dockerfile для фронтенда
+      dockerfile: Dockerfile.stage  # Путь к Dockerfile
+    container_name: visualizer-frontend-stage
+    ports:
+      - "81:81"  # Порт для stage
+    networks:
+      - backend-network
+    depends_on:
+      - backend_stage
+
+networks:
+  backend-network:
+    driver: bridge
+
+volumes:
+  visualizer-db-prod-data:
+    driver: local
+  visualizer-db-stage-data:
+    driver: local

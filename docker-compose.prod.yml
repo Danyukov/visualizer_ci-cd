@@ -1,0 +1,55 @@
+version: "3.8"
+services:
+  postgres_prod:
+    image: postgres:latest
+    container_name: visualizer-db-prod
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: visualizer-db-prod
+    ports:
+      - "5432:5432"
+    volumes:
+      - visualizer-db-prod-data:/var/lib/postgresql/data
+    networks:
+      - backend-network
+
+  backend_prod:
+    build:
+      context: ./visualizer-go
+      dockerfile: Dockerfile
+    container_name: visualizer-backend-prod
+    ports:
+      - "8888:8888"
+    environment:
+      - CONFIG_PATH=/app/configs/prod.yaml
+      - DATABASE_HOST=postgres_prod
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=visualizer-db-prod
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=root
+    networks:
+      - backend-network
+    depends_on:
+      - postgres_prod
+    command: sh -c "sleep 10 && /app/visualizerlinux3"
+
+  frontend_prod:
+    build:
+      context: ./visualizer-react
+      dockerfile: Dockerfile
+    container_name: visualizer-frontend-prod
+    ports:
+      - "80:80"
+    networks:
+      - backend-network
+    depends_on:
+      - backend_prod
+
+networks:
+  backend-network:
+    driver: bridge
+
+volumes:
+  visualizer-db-prod-data:
+    driver: local
