@@ -11,7 +11,7 @@
         cd C:/Users/imbydata/Desktop/Visualizer                                              #Переходим в папку где я запускал визуализатор
         powershell
         git fetch origin  
-        git reset --hard origin/main                                       # Загружаем изменения(можно заменить на git clone по ssh  если захочешь сам
+        git reset --hard origin/main                                       
         docker-compose -f docker-compose.stage.yml up --build
         EOF
     env:
