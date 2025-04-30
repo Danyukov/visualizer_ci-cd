@@ -30,7 +30,7 @@ jobs:
         powershell
         git fetch origin
         git reset --hard origin/stage
-        docker-compose up --build -d
+        docker-compose -f docker-compose.stage.yml up --build
         EOF
     env:
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
