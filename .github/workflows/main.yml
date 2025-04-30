@@ -29,7 +29,7 @@ jobs:
         cd C:/Users/imbydata/Desktop/Visualizer
         powershell
         git fetch origin
-        git reset --hard origin/stage
+        git reset --hard origin/main
         docker-compose -f docker-compose.stage.yml up --build
         EOF
     env:
