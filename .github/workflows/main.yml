@@ -3,7 +3,7 @@ name: Deploy to Server
 on:
   push:
     branches:
-      - stage  # или другая ветка, по которой нужно запускать woвrkflow
+      -main  # или другая ветка, по которой нужно запускать woвrkflow
 
 jobs:
   deploy:
